@@ -1,277 +1,289 @@
+import os
 import pickle
 import numpy as np
-from flask import Flask, render_template_string, request
+from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
-# Load the trained model from random.pkl
-with open('random.pkl', 'rb') as f:
-    model = pickle.load(f)
+# Load the trained model
+MODEL_PATH = 'random.pkl'
+try:
+    with open(MODEL_PATH, 'rb') as f:
+        model = pickle.load(f)
+    print("Model loaded successfully!")
+except Exception as e:
+    print(f"Error loading model: {e}")
+    model = None
 
-# Define HTML template with modern styling and smooth animations
+# Embedded HTML Template with vibrant styling & 21 input fields
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Layoff & Workforce Risk Analyzer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Market Condition & Layoff Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text-color: #f8fafc;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
         }
-
         body {
-            background: var(--bg-gradient);
-            color: var(--text-color);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem 1rem;
+            padding: 20px;
         }
-
         .container {
+            background: #ffffff;
             width: 100%;
-            max-width: 850px;
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 2.5rem;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            animation: fadeIn 0.8s ease-out;
+            max-width: 900px;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #333333;
+            margin-bottom: 8px;
+            font-size: 26px;
             text-align: center;
         }
-
         p.subtitle {
             text-align: center;
-            color: #94a3b8;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+            color: #666666;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
-
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
         }
-
-        .form-group {
+        .input-group {
             display: flex;
             flex-direction: column;
         }
-
         label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-
-        input, select {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            color: #fff;
-            font-size: 0.95rem;
+        input {
+            padding: 10px 14px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 14px;
             transition: all 0.3s ease;
         }
-
-        input:focus, select:focus {
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
         }
-
-        button {
+        .btn-container {
             grid-column: 1 / -1;
-            margin-top: 1rem;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            margin-top: 10px;
+        }
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 10px;
-            padding: 0.85rem;
-            font-size: 1rem;
+            padding: 14px;
+            font-size: 16px;
             font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s ease, opacity 0.2s ease;
+            transition: opacity 0.3s ease;
         }
-
         button:hover {
-            opacity: 0.95;
-            transform: translateY(-2px);
+            opacity: 0.9;
         }
-
-        .result-card {
-            margin-top: 2rem;
-            background: rgba(15, 23, 42, 0.8);
-            border-left: 5px solid var(--primary);
-            padding: 1.5rem;
-            border-radius: 12px;
-            animation: slideUp 0.5s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: #818cf8;
-        }
-
-        .result-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #fff;
+        .result-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #edf2f7;
+            border-left: 5px solid #667eea;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Workforce Risk & AI Impact Predictor</h1>
-        <p class="subtitle">Powered by Random Forest Machine Learning Model</p>
+        <h1>Market & Workforce Predictor</h1>
+        <p class="subtitle">Powered by Random Forest Classifier</p>
         
-        <form method="POST">
+        <form action="/predict" method="POST">
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Company Size (Employees)</label>
-                    <input type="number" name="company_size" required placeholder="e.g., 5000">
+                <div class="input-group">
+                    <label>Company Size</label>
+                    <input type="number" step="any" name="company_size" required value="5000">
                 </div>
-                <div class="form-group">
+                <div class="input-group">
                     <label>Month</label>
-                    <input type="number" name="month" min="1" max="12" required placeholder="e.g., 6">
+                    <input type="number" name="month" min="1" max="12" required value="10">
                 </div>
-                <div class="form-group">
+                <div class="input-group">
                     <label>Year</label>
-                    <input type="number" name="year" required placeholder="e.g., 2026">
+                    <input type="number" name="year" required value="2026">
                 </div>
-                <div class="form-group">
+                <div class="input-group">
                     <label>Layoffs Count</label>
-                    <input type="number" name="layoffs_count" required placeholder="e.g., 150">
+                    <input type="number" step="any" name="layoffs_count" required value="150">
                 </div>
-                <div class="form-group">
-                    <label>Layoff Percentage (%)</label>
-                    <input type="number" step="any" name="layoff_percentage" required placeholder="e.g., 5.5">
+                <div class="input-group">
+                    <label>Layoff Percentage</label>
+                    <input type="number" step="any" name="layoff_percentage" required value="0.05">
                 </div>
-                <div class="form-group">
-                    <label>AI Automation Impact (0-10)</label>
-                    <input type="number" step="any" name="ai_automation_impact" required placeholder="e.g., 7.2">
+                <div class="input-group">
+                    <label>AI Automation Impact</label>
+                    <input type="number" step="any" name="ai_automation_impact" required value="3">
                 </div>
-                <div class="form-group">
-                    <label>AI Replacement Risk (0-10)</label>
-                    <input type="number" step="any" name="ai_replacement_risk" required placeholder="e.g., 6.0">
+                <div class="input-group">
+                    <label>AI Replacement Risk</label>
+                    <input type="number" step="any" name="ai_replacement_risk" required value="2">
                 </div>
-                <div class="form-group">
+                <div class="input-group">
                     <label>Open Roles</label>
-                    <input type="number" name="open_roles" required placeholder="e.g., 25">
+                    <input type="number" step="any" name="open_roles" required value="45">
                 </div>
-                <div class="form-group">
-                    <label>Remote Jobs Percentage (%)</label>
-                    <input type="number" step="any" name="remote_jobs_percentage" required placeholder="e.g., 40">
+                <div class="input-group">
+                    <label>Remote Jobs %</label>
+                    <input type="number" step="any" name="remote_jobs_percentage" required value="30">
                 </div>
-                <div class="form-group">
-                    <label>Stock Growth Percent (%)</label>
-                    <input type="number" step="any" name="stock_growth_percent" required placeholder="e.g., 12.5">
+                <div class="input-group">
+                    <label>Stock Growth %</label>
+                    <input type="number" step="any" name="stock_growth_percent" required value="12.5">
                 </div>
-                <div class="form-group">
-                    <label>Revenue Growth Percent (%)</label>
-                    <input type="number" step="any" name="revenue_growth_percent" required placeholder="e.g., 8.1">
+                <div class="input-group">
+                    <label>Revenue Growth %</label>
+                    <input type="number" step="any" name="revenue_growth_percent" required value="8.0">
                 </div>
-                <div class="form-group">
-                    <label>Salary Budget Change (%)</label>
-                    <input type="number" step="any" name="salary_budget_change" required placeholder="e.g., 2.0">
+                <div class="input-group">
+                    <label>Salary Budget Change</label>
+                    <input type="number" step="any" name="salary_budget_change" required value="2.5">
                 </div>
-                <div class="form-group">
-                    <label>AI Adoption Level (0-10)</label>
-                    <input type="number" step="any" name="ai_adoption_level" required placeholder="e.g., 8.0">
+                <div class="input-group">
+                    <label>AI Adoption Level</label>
+                    <input type="number" step="any" name="ai_adoption_level" required value="4">
                 </div>
-                <div class="form-group">
-                    <label>Employee Sentiment (0-10)</label>
-                    <input type="number" step="any" name="employee_sentiment" required placeholder="e.g., 6.5">
+                <div class="input-group">
+                    <label>Employee Sentiment</label>
+                    <input type="number" step="any" name="employee_sentiment" required value="3.5">
                 </div>
-                <div class="form-group">
-                    <label>Job Security Score (0-10)</label>
-                    <input type="number" step="any" name="job_security_score" required placeholder="e.g., 7.0">
+                <div class="input-group">
+                    <label>Job Security Score</label>
+                    <input type="number" step="any" name="job_security_score" required value="7.0">
+                </div>
+                <div class="input-group">
+                    <label>Inflation Rate %</label>
+                    <input type="number" step="any" name="inflation_rate" required value="3.2">
+                </div>
+                <div class="input-group">
+                    <label>Interest Rate %</label>
+                    <input type="number" step="any" name="interest_rate" required value="5.0">
+                </div>
+                <div class="input-group">
+                    <label>Venture Funding ($M)</label>
+                    <input type="number" step="any" name="venture_funding_millions" required value="25.0">
+                </div>
+                <div class="input-group">
+                    <label>Attrition Rate %</label>
+                    <input type="number" step="any" name="attrition_rate" required value="10.5">
+                </div>
+                <div class="input-group">
+                    <label>Hiring Freeze Flag (0 or 1)</label>
+                    <input type="number" name="hiring_freeze_flag" min="0" max="1" required value="0">
+                </div>
+                <div class="input-group">
+                    <label>Productivity Index</label>
+                    <input type="number" step="any" name="productivity_index" required value="85.0">
+                </div>
+                
+                <div class="btn-container">
+                    <button type="submit">Run Prediction</button>
                 </div>
             </div>
-            <button type="submit">Run Prediction Analysis</button>
         </form>
 
-        {% if prediction is not none %}
-        <div class="result-card">
-            <h3>Analysis Result</h3>
-            <div class="result-value">Predicted Outcome: {{ prediction }}</div>
-        </div>
+        {% if prediction_text %}
+            <div class="result-box">
+                {{ prediction_text }}
+            </div>
         {% endif %}
     </div>
 </body>
 </html>
 """
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def home():
-    prediction = None
-    if request.method == 'POST':
-        try:
-            # Extract numerical features matching the model's expected input order
-            features = [
-                float(request.form['company_size']),
-                float(request.form['month']),
-                float(request.form['year']),
-                float(request.form['layoffs_count']),
-                float(request.form['layoff_percentage']),
-                float(request.form['ai_automation_impact']),
-                float(request.form['ai_replacement_risk']),
-                float(request.form['open_roles']),
-                float(request.form['remote_jobs_percentage']),
-                float(request.form['stock_growth_percent']),
-                float(request.form['revenue_growth_percent']),
-                float(request.form['salary_budget_change']),
-                float(request.form['ai_adoption_level']),
-                float(request.form['employee_sentiment']),
-                float(request.form['job_security_score'])
-            ]
-            
-            # Reshape for model prediction
-            input_data = np.array([features])
-            pred = model.predict(input_data)
-            prediction = str(pred[0])
-        except Exception as e:
-            prediction = f"Error during prediction: {str(e)}"
+    return render_template_string(HTML_TEMPLATE)
 
-    return render_template_string(HTML_TEMPLATE, prediction=prediction)
+@app.route('/predict', methods=['POST'])
+def predict():
+    if model is None:
+        return render_template_string(HTML_TEMPLATE, prediction_text="Error: Model not loaded properly.")
+    
+    try:
+        # Collect values from form inputs
+        form_vals = [
+            float(request.form.get('company_size', 0)),
+            float(request.form.get('month', 1)),
+            float(request.form.get('year', 2026)),
+            float(request.form.get('layoffs_count', 0)),
+            float(request.form.get('layoff_percentage', 0.0)),
+            float(request.form.get('ai_automation_impact', 0)),
+            float(request.form.get('ai_replacement_risk', 0)),
+            float(request.form.get('open_roles', 0)),
+            float(request.form.get('remote_jobs_percentage', 0)),
+            float(request.form.get('stock_growth_percent', 0)),
+            float(request.form.get('revenue_growth_percent', 0)),
+            float(request.form.get('salary_budget_change', 0)),
+            float(request.form.get('ai_adoption_level', 0)),
+            float(request.form.get('employee_sentiment', 0)),
+            float(request.form.get('job_security_score', 0)),
+            float(request.form.get('inflation_rate', 0)),
+            float(request.form.get('interest_rate', 0)),
+            float(request.form.get('venture_funding_millions', 0)),
+            float(request.form.get('attrition_rate', 0)),
+            float(request.form.get('hiring_freeze_flag', 0)),
+            float(request.form.get('productivity_index', 0))
+        ]
+        
+        features = np.array(form_vals)
+        
+        # Automatically match the exact number of features expected by the loaded model
+        expected_n_features = getattr(model, "n_features_in_", len(features))
+        if len(features) < expected_n_features:
+            # Pad with zeros if fewer
+            features = np.pad(features, (0, expected_n_features - len(features)), 'constant')
+        elif len(features) > expected_n_features:
+            # Trim if extra
+            features = features[:expected_n_features]
+            
+        features = features.reshape(1, -1)
+        prediction = model.predict(features)[0]
+        
+        return render_template_string(HTML_TEMPLATE, prediction_text=f"Predicted Market Condition: {prediction}")
+    
+    except Exception as e:
+        return render_template_string(HTML_TEMPLATE, prediction_text=f"Error during prediction: {str(e)}")
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
